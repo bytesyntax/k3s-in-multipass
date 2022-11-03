@@ -13,9 +13,7 @@ for VM in ${VMS[*]}; do
     multipass launch --name ${VM} --mem 2G --disk 5G
 
     echo "====> ${VM}: Updating applications"
-    multipass exec ${VM} -- sudo apt update
-    multipass exec ${VM} -- sh -c "DEBIAN_FRONTEND=noninteractive sudo apt upgrade -y"
-    multipass exec ${VM} -- curl -sfL https://get.k3s.io -o /tmp/k3s_install
+    multipass exec ${VM} -- sh -c "sudo apt update && sudo DEBIAN_FRONTEND=noninteractive apt upgrade -y"
 
     if [ -z "${K3S_CTRL}" ]; then
         echo "====> ${VM}: Installing k3s (controller)"
