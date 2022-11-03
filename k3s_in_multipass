@@ -1,0 +1,37 @@
+VMS=(k3s-ctrl k3s-work)
+K3S_CTRL=''
+K3S_TOKEN=''
+
+if [[ $1 == '--clean' ]]; then
+    echo "====> Performing a clean install"
+    multipass delete --all
+    multipass purge
+fi
+
+for VM in ${VMS[*]}; do
+    echo "====> ${VM}: Installing VM"
+    multipass launch --name ${VM} --mem 2G --disk 5G
+
+    echo "====> ${VM}: Updating applications"
+    multipass exec ${VM} -- sudo apt update
+    multipass exec ${VM} -- sh -c "DEBIAN_FRONTEND=noninteractive sudo apt upgrade -y"
+    multipass exec ${VM} -- curl -sfL https://get.k3s.io -o /tmp/k3s_install
+
+    if [ -z "${K3S_CTRL}" ]; then
+        echo "====> ${VM}: Installing k3s (controller)"
+        multipass exec ${VM} -- sh -c "curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC='--write-kubeconfig=/home/ubuntu/.kube/config --write-kubeconfig-mode=644' sh -"
+
+        echo "====> ${VM}: Getting controller details"
+        K3S_CTRL=${VM}
+        K3S_URL='https://'$(multipass exec ${K3S_CTRL} -- hostname -I | awk '{print $1}')':6443'
+        K3S_TOKEN=$(multipass exec ${K3S_CTRL} -- sudo cat /var/lib/rancher/k3s/server/node-token)
+        echo "${K3S_CTRL}: ${K3S_URL} ${K3S_TOKEN}"
+    else
+        echo "====> ${VM}: Installing k3s (worker)"
+        multipass exec ${VM} -- sh -c "curl -sfL https://get.k3s.io | K3S_URL=${K3S_URL} K3S_TOKEN=${K3S_TOKEN} sh -"
+        multipass exec ${VM} -- sudo systemctl enable --now k3s-agent
+    fi
+
+    echo
+    echo
+done
