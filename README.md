@@ -3,7 +3,7 @@ K3s in multipass is created to setup a k3s cluster over a number of VMs. When ru
 The first node in the list is treated as a control plane node and the remainder as workers.
 
 ## Syntax
-Just run the script `k3s-in-multipass`
+Just run the script `k3s_in_multipass`
 
 Variables for VMs, RAM and disk size can be changed at the top of the script as needed.
 
